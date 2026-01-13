@@ -15,7 +15,7 @@ const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>(ViewType.DASHBOARD);
 
   return (
-    <div className="flex min-h-screen bg-slate-50 overflow-hidden">
+    <div className="flex min-h-screen bg-slate-50 overflow-hidden print:overflow-visible print:bg-white">
       {/* Sidebar - Hidden on Print */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20 no-print">
         <div className="p-6 flex items-center gap-3 border-b border-slate-800">
@@ -58,7 +58,7 @@ const App: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative h-screen print:overflow-visible">
+      <main className="flex-1 overflow-y-auto relative h-screen print:h-auto print:overflow-visible">
         <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-10 px-8 py-4 no-print">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-slate-800">
@@ -77,7 +77,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className={`p-8 ${activeView === ViewType.AI_INSIGHTS ? 'print:p-0' : ''}`}>
+        <div className={`p-8 ${activeView === ViewType.AI_INSIGHTS ? 'print:p-0 print:bg-white' : ''}`}>
           {activeView === ViewType.DASHBOARD && <Dashboard />}
           {activeView === ViewType.COMPARISON && <Comparison />}
           {activeView === ViewType.AI_INSIGHTS && <AiInsights />}

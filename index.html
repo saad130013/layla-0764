@@ -17,6 +17,11 @@
         @media print {
             body {
                 background-color: white !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            #root {
+                height: auto !important;
             }
             .no-print {
                 display: none !important;
@@ -25,8 +30,8 @@
                 display: block !important;
             }
             @page {
-                size: A4;
-                margin: 15mm;
+                size: A4 landscape;
+                margin: 10mm;
             }
             .report-container {
                 box-shadow: none !important;
@@ -35,12 +40,26 @@
                 max-width: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            /* Prevent sections from splitting awkwardly */
+            section, .report-section {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                margin-bottom: 20px;
             }
             tr {
                 page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            thead {
+                display: table-header-group;
             }
             h1, h2, h3 {
                 page-break-after: avoid !important;
+                break-after: avoid !important;
             }
         }
     </style>
