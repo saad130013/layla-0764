@@ -2,28 +2,41 @@
 import React from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  BarChart, Bar, Legend, Cell, PieChart, Pie, ReferenceLine
+  BarChart, Bar, ReferenceLine, PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { WORKFORCE_HISTORY, CONTRACT_TOTAL } from '../data';
+import { WORKFORCE_HISTORY, CONTRACT_TOTAL, PENALTY_PER_VACANCY } from '../data';
+
+const COLORS = ['#2563eb', '#7c3aed', '#db2777', '#ea580c'];
 
 const Dashboard: React.FC = () => {
   const latestData = WORKFORCE_HISTORY[WORKFORCE_HISTORY.length - 1];
-  const complianceRate = ((latestData.actualOnSite / CONTRACT_TOTAL) * 100).toFixed(1);
+  const gap = CONTRACT_TOTAL - latestData.actualOnSite;
+  const estimatedPenalty = gap * PENALTY_PER_VACANCY;
+
+  const pieData = [
+    { name: 'النظافة', value: latestData.breakdown[0].staffCount },
+    { name: 'العمليات', value: latestData.breakdown[1].staffCount },
+    { name: 'الفنيين', value: latestData.breakdown[2].staffCount },
+    { name: 'عجز', value: gap },
+  ];
 
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="العدد الأصلي بالعقد" value={CONTRACT_TOTAL} unit="عامل وعاملة" type="secondary" />
-        <StatCard title="الفعلي (يناير 26)" value={latestData.actualOnSite} target={CONTRACT_TOTAL} unit="عامل" type="info" />
-        <StatCard title="إجمالي النقص" value={CONTRACT_TOTAL - latestData.actualOnSite} unit="وظيفة" type="danger" />
-        <StatCard title="أعلى نقص مسجل" value={80} unit="عامل (ديسمبر)" type="warning" />
+        <StatCard title="العدد المستهدف" value={CONTRACT_TOTAL} unit="موظف" type="secondary" />
+        <StatCard title="الحضور الفعلي" value={latestData.actualOnSite} target={CONTRACT_TOTAL} unit="موظف" type="info" />
+        <StatCard title="إجمالي النقص" value={gap} unit="وظيفة" type="danger" />
+        <StatCard title="الجزاءات التقديرية" value={estimatedPenalty.toLocaleString()} unit="ريال / شهر" type="warning" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Trend Chart */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-2 text-right">منحنى العمالة الفعلية ضد العقد (531)</h3>
+        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-slate-800">تحليل الاستقرار التشغيلي السنوي</h3>
+            <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold">12 شهر (فبراير 2025 - يناير 2026)</span>
+          </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={WORKFORCE_HISTORY}>
@@ -34,73 +47,90 @@ const Dashboard: React.FC = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} dy={10} />
-                <YAxis axisLine={false} tickLine={false} domain={[400, 550]} />
-                <Tooltip />
-                <ReferenceLine y={CONTRACT_TOTAL} label={{ position: 'top', value: '531', fill: '#ef4444', fontWeight: 'bold' }} stroke="#ef4444" strokeDasharray="5 5" />
-                <Area type="monotone" dataKey="actualOnSite" name="الفعلي" stroke="#2563eb" strokeWidth={3} fill="url(#colorActual)" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} dy={10} fontSize={11} />
+                <YAxis axisLine={false} tickLine={false} domain={[400, 550]} fontSize={11} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                <ReferenceLine y={CONTRACT_TOTAL} stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" label={{ value: 'الهدف', fill: '#ef4444', fontSize: 10, fontWeight: 'bold' }} />
+                <Area type="monotone" dataKey="actualOnSite" name="الفعلي" stroke="#2563eb" strokeWidth={3} fill="url(#colorActual)" isAnimationActive={true} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Gap Chart */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-2 text-right">تحليل "إجمالي النقص" شهرياً</h3>
+        {/* Department Pie Chart */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+          <h3 className="text-lg font-bold text-slate-800 mb-6">توزيع القوى العاملة (الشهر الحالي)</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={WORKFORCE_HISTORY.map(d => ({ ...d, gap: CONTRACT_TOTAL - d.actualOnSite }))}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index === 3 ? '#f1f5f9' : COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
                 <Tooltip />
-                <Bar dataKey="gap" name="إجمالي النقص" fill="#ef4444" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Legend verticalAlign="bottom" height={36}/>
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* The Specific Table requested by user */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-        <div className="bg-slate-900 p-4 flex justify-between items-center">
-          <h3 className="text-white font-bold text-lg">جدول مقارنة العمالة والنقص (مستهدف العقد: {CONTRACT_TOTAL})</h3>
-          <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full font-bold">تحديث فبراير 25 - يناير 26</span>
+      {/* Financial Impact Table */}
+      <div className="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="bg-slate-900 p-6 flex justify-between items-center">
+          <div>
+            <h3 className="text-white font-bold text-xl">سجل التكلفة والجزاءات السنوي</h3>
+            <p className="text-slate-400 text-sm mt-1">تحليل شامل لجميع الأشهر من فبراير 2025 إلى يناير 2026</p>
+          </div>
+          <div className="text-left">
+            <span className="text-slate-400 text-xs block">إجمالي الغرامات المحتملة (آخر شهر)</span>
+            <span className="text-red-400 font-black text-2xl">{estimatedPenalty.toLocaleString()} ريال</span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-center border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b-2 border-slate-200">
-                <th className="px-6 py-4 text-slate-700 font-bold border-l border-slate-200">الأشهر</th>
-                <th className="px-6 py-4 text-slate-700 font-bold border-l border-slate-200">العدد الفعلي المتواجد من {CONTRACT_TOTAL} عامل وعاملة</th>
-                <th className="px-6 py-4 text-red-600 font-bold">إجمالي النقص</th>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="px-6 py-4 text-slate-700 font-bold">الشهر</th>
+                <th className="px-6 py-4 text-slate-700 font-bold">السنة</th>
+                <th className="px-6 py-4 text-slate-700 font-bold">العجز</th>
+                <th className="px-6 py-4 text-slate-700 font-bold">الغرامة المتوقعة</th>
+                <th className="px-6 py-4 text-slate-700 font-bold">نسبة الالتزام</th>
+                <th className="px-6 py-4 text-slate-700 font-bold">الحالة</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {WORKFORCE_HISTORY.map((item, index) => {
-                const gap = CONTRACT_TOTAL - item.actualOnSite;
+                const gapVal = CONTRACT_TOTAL - item.actualOnSite;
+                const penalty = gapVal * PENALTY_PER_VACANCY;
+                const comp = ((item.actualOnSite / CONTRACT_TOTAL) * 100).toFixed(1);
                 return (
-                  <tr key={index} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-800 border-l border-slate-100 bg-slate-50/30">{item.month}-{item.year.toString().slice(-2)}</td>
-                    <td className="px-6 py-4 font-medium text-slate-600 border-l border-slate-100">{item.actualOnSite}</td>
-                    <td className={`px-6 py-4 font-black ${gap > 40 ? 'text-red-700 bg-red-50/50' : 'text-red-500'}`}>
-                      {gap}
+                  <tr key={index} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-800">{item.month}</td>
+                    <td className="px-6 py-4 text-slate-500">{item.year}</td>
+                    <td className="px-6 py-4 font-bold text-red-600">{gapVal}</td>
+                    <td className="px-6 py-4 font-medium">{penalty.toLocaleString()} ر.س</td>
+                    <td className="px-6 py-4 font-black text-blue-700">{comp}%</td>
+                    <td className="px-6 py-4">
+                      {gapVal > 50 ? (
+                        <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">حرجة</span>
+                      ) : (
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">مقبولة</span>
+                      )}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot>
-              <tr className="bg-slate-900 text-white font-bold">
-                <td className="px-6 py-4">المتوسط السنوي</td>
-                <td className="px-6 py-4">
-                  {Math.round(WORKFORCE_HISTORY.reduce((acc, curr) => acc + curr.actualOnSite, 0) / WORKFORCE_HISTORY.length)}
-                </td>
-                <td className="px-6 py-4 text-red-400">
-                  {Math.round(WORKFORCE_HISTORY.reduce((acc, curr) => acc + (CONTRACT_TOTAL - curr.actualOnSite), 0) / WORKFORCE_HISTORY.length)}
-                </td>
-              </tr>
-            </tfoot>
           </table>
         </div>
       </div>
@@ -117,25 +147,26 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, target, unit, type }) => {
+  const colorMap = {
+    info: 'border-blue-200 bg-blue-50/30 text-blue-700',
+    danger: 'border-red-200 bg-red-50/30 text-red-700',
+    warning: 'border-amber-200 bg-amber-50/30 text-amber-700',
+    secondary: 'border-slate-200 bg-slate-50/30 text-slate-700'
+  };
+
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 transition-transform hover:scale-[1.02]">
-      <p className="text-sm font-semibold text-slate-500 mb-1">{title}</p>
+    <div className={`p-6 rounded-3xl border-2 transition-all hover:shadow-md ${colorMap[type]}`}>
+      <p className="text-xs font-bold uppercase tracking-wider mb-2 opacity-70">{title}</p>
       <div className="flex items-baseline gap-2">
-        <h4 className="text-3xl font-black text-slate-900">{value}</h4>
-        <span className="text-sm font-medium text-slate-400">{unit}</span>
+        <h4 className="text-3xl font-black">{value}</h4>
+        <span className="text-xs font-bold opacity-60">{unit}</span>
       </div>
       {target && (
-        <div className="mt-4">
-          <div className="flex justify-between text-[10px] mb-1">
-            <span className="text-slate-400">نسبة الإنجاز من العقد</span>
-            <span className="text-slate-600 font-bold">{Math.round((Number(value) / target) * 100)}%</span>
-          </div>
-          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-1000 ${type === 'danger' ? 'bg-red-500' : 'bg-blue-600'}`}
-              style={{ width: `${(Number(value) / target) * 100}%` }}
-            ></div>
-          </div>
+        <div className="mt-4 w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-current transition-all duration-1000"
+            style={{ width: `${(Number(value) / target) * 100}%` }}
+          ></div>
         </div>
       )}
     </div>
